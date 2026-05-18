@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gunpla Inventory - Tactical Dashboard Integration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    /* DESIGN SYSTEM THEME TOKENS */
+    :root {
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #05070f;
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: block;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 100% !important;
+      min-height: 100vh;
+      background: var(--bg0);
+      display: block;
+      position: relative;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .app.dark {
+      --bg0: #0e0f11;
+      --bg1: #1c1d21;
+      --bg2: #26282e;
+      --t1: #f0f0f0;
+      --t2: #b0b3bb;
+      --t3: #787c88;
+      --bdr: #32353e;
+      --nav-bg: #161719;
+      --acc-blue: #5aabff;
+      --acc-orange: #ffb347;
+      --acc-green: #3ddc84;
+      --acc-red: #ff6b6b;
+      --acc-purple: #c4b0ff;
+      --badge-own-bg: #0d2e1c;
+      --badge-own-t: #3ddc84;
+      --badge-pre-bg: #2e1e07;
+      --badge-pre-t: #ffb347;
+    }
+
+    .app.light {
+      --bg0: #f4f5f7;
+      --bg1: #ffffff;
+      --bg2: #eef0f3;
+      --t1: #111111;
+      --444444: #444444;
+      --t2: #444444;
+      --t3: #71717a;
+      --bdr: #e0e2e6;
+      --nav-bg: #ffffff;
+      --acc-blue: #0066cc;
+      --acc-orange: #e67e22;
+      --acc-green: #2ecc71;
+      --acc-red: #e74c3c;
+      --acc-purple: #9b59b6;
+      --badge-own-bg: #e8f8f5;
+      --badge-own-t: #2ecc71;
+      --badge-pre-bg: #fdf5e6;
+      --badge-pre-t: #e67e22;
+    }
+
+    /* AUTH PAGE UI */
+    .auth-page {
+      display: none;
+      padding: 40px 24px;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+      background: var(--bg0);
+      color: var(--t1);
+    }
+
+    .auth-page.active {
+      display: flex;
+    }
+
+    .auth-wrapper {
+      width: 100%;
+      max-width: 360px;
+      background: var(--bg1);
+      padding: 32px 24px;
+      border-radius: 16px;
+      border: 1px solid var(--bdr);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--t2);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      color: var(--t1);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      font-family: var(--font-sans);
+    }
+
+    .btn-block {
+      width: 100%;
+      padding: 12px;
+      background: var(--acc-blue);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* BADGES */
+    .r-badge {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-weight: 700;
+      display: inline-block;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .r-badge.badge-own {
+      background-color: var(--badge-own-bg);
+      color: var(--badge-own-t);
+    }
+
+    .r-badge.badge-pre {
+      background-color: var(--badge-pre-bg);
+      color: var(--badge-pre-t);
+    }
+
+    /* HEADER TOPBAR */
+    .topbar {
+      background: var(--nav-bg);
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--bdr);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+    }
+
+    .topbar-content {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar-left-block {
+      min-width: 180px;
+    }
+
+    .topbar-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--t1);
+    }
+
+    .topbar-sub {
+      font-size: 12px;
+      color: var(--acc-blue);
+      margin-top: 2px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .icon-btn {
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--t2);
+    }
+
+    /* DROPDOWN PROFILE BUTTON */
+    .profile-trigger-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      padding: 4px 10px 4px 4px;
+      border-radius: 99px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .profile-trigger-btn:hover {
+      border-color: var(--acc-blue);
+    }
+
+    .profile-trigger-avatar-container {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid var(--bdr);
+    }
+
+    .profile-trigger-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .profile-trigger-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--t1);
+      max-width: 90px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* DROPDOWN MENU PANEL */
+    .profile-dropdown-menu {
+      position: absolute;
+      top: 48px;
+      right: 0;
+      width: 280px;
+      background: var(--bg1);
+      border: 1px solid var(--bdr);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 1000;
+    }
+
+    .profile-dropdown-menu.show {
+      display: flex;
+    }
+
+    .dropdown-user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    .dropdown-avatar-big {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid var(--acc-blue);
+    }
+
+    .dropdown-avatar-big img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .dropdown-info-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dropdown-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--t1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dropdown-email {
+      font-size: 11px;
+      color: var(--t3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .dropdown-role-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: rgba(90, 171, 255, 0.15);
+      color: var(--acc-blue);
+      border-radius: 4px;
+      font-weight: 700;
+      display: inline-block;
+      margin-top: 4px;
+    }
+
+    .dropdown-item-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg2);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 13px;
+      color: var(--t1);
+    }
+
+    .dropdown-item-link:hover {
+      border-color: var(--acc-blue);
+      background: var(--bg1);
+    }
+
+    .dropdown-item-link i {
+      font-size: 16px;
+    }
+
+    /* SCREEN LAYOUT SYSTEM */
+    .screen {
+      width: 100%;
+      max-width: 100% !important;
+      margin: 0 auto;
+      padding: 24px;
+      padding-bottom: 90px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .main-content-area {
+      min-width: 0;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* DASHBOARD OVERVIEW CARDS */
+    .cards-wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--bg1);
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--bdr);
+      min-height: 165px;
+    }
+
+    .card-accent {
+      height: 3px;
+      width: 32px;
+      border-radius: 99px;
+      margin-bottom: 14px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .card-count-block {
+      min-width: 70px;
+    }
+
+    .card-count {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--t1);
+      line-height: 1.1;
+    }
+
+    .card-count-sub {
+      font-size: 12px;
+      color: var(--t3);
+      margin-top: 2px;
+    }
+
+    .card-main-value {
+      text-align: right;
+      min-width: 110px;
+    }
+
+    .card-main-value .val {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .card-main-value .lbl {
+      font-size: 12px;
+      color: var(--t3);
+      text-align: right;
+      margin-top: 2px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--bdr);
+      margin: 14px 0;
+    }
+
+    .card-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .card-row .rl {
+      font-size: 13px;
+      color: var(--t2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .card-row .rr {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t1);
+      white-space: nowrap;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .prog-bar {
+      height: 6px;
+      background: var(--bg2);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .prog-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+
+    .prog-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--t2);
+      margin-top: 6px;
+    }
+
+    .section-hd {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--acc-blue);
+      padding: 16px 0 10px 0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ITEMS LISTS */
+    .items-list-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      background: var(--bg1);
+      border: 1px solid var(--bdr);
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .r-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .r-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .r-name {
+      font-size: 15px;
+      color: var(--t1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+    }
+
+    .r-meta {
+      font-size: 13px;
+      color: var(--t2);
+      margin-top: 4px;
+    }
+
+    /* CONTROLS & HEADERS */
+    .col-page-header {
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-bar-wrap {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      max-width: 500px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: var(--bg1);
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--t1);
+      outline: none;
+    }
+
+    .filter-btn,
+    .add-data-btn {
+      background: var(--bg1);
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      padding: 0 14px;
+      color: var(--t2);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 40px;
+    }
+
+    .add-data-btn {
+      background: var(--acc-blue);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+    }
+
+    /* DETAIL VIEW */
+    .detail-layout-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--bdr);
+      margin-bottom: 16px;
+    }
+
+    .back-btn {
+      color: var(--acc-blue);
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      min-width: 60px;
+    }
+
+    .detail-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--t1);
+    }
+
+    .detail-card {
+      background: var(--bg1);
+      border-radius: 14px;
+      border: 1px solid var(--bdr);
+      padding: 20px;
+    }
+
+    .detail-thumb-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .detail-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      background: var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      flex-shrink: 0;
+    }
+
+    .detail-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--t1);
+    }
+
+    .detail-series {
+      font-size: 14px;
+      color: var(--acc-orange);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .detail-grade {
+      font-size: 13px;
+      color: var(--t2);
+      margin-top: 2px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--bdr);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 13px;
+      color: var(--t2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-val {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t1);
+    }
+
+    /* ADMIN PANEL */
+    .user-manage-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .user-manage-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--bg1);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--bdr);
+    }
+
+    .role-toggle-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      min-width: 90px;
+    }
+
+    .role-toggle-btn.is-admin {
+      background-color: rgba(196, 176, 255, 0.15);
+      color: var(--acc-purple);
+    }
+
+    .role-toggle-btn.is-user {
+      background-color: rgba(120, 124, 136, 0.15);
+      color: var(--t2);
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--t2);
+      font-size: 14px;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 14px;
+      opacity: 0.5;
+    }
+
+    /* PROFILE EDIT SCREEN (เพิ่มสไตล์ตามสกรีนช็อตรูปภาพ) */
+    .prof-banner-hud {
+      background: linear-gradient(135deg, rgba(90, 171, 255, 0.1) 0%, rgba(196, 176, 255, 0.05) 100%);
+      border: 1px dashed var(--acc-blue);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .prof-stat-mini-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .prof-stat-box {
+      background: var(--bg2);
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    /* BOTTOM NAVIGATION BAR */
+    .bottom-nav {
+      background: var(--nav-bg);
+      border-top: 1px solid var(--bdr);
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      color: var(--t3);
+      font-size: 11px;
+      background: none;
+      border: none;
+    }
+
+    .nav-btn i {
+      font-size: 22px;
+    }
+
+    .nav-btn.active {
+      color: var(--acc-blue);
+      font-weight: 600;
+    }
+
+    /* RESPONSIVE LAYOUT DESKTOP MASTER HUD */
+    @media (min-width: 768px) {
+      .cards-wrap {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .items-list-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .detail-layout-container {
+        grid-template-columns: 1.5fr 1fr;
+      }
+
+      .user-manage-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .screen {
+        grid-template-columns: 1fr;
+        padding: 32px;
+      }
+
+      #nav-pro {
+        display: none !important;
+      }
+
+      .topbar-content {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 40px;
+      }
+
+      .bottom-nav {
+        position: static;
+        border-top: none;
+        background: transparent;
+        padding: 0;
+        display: flex !important;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .nav-btn {
+        flex: none;
+        flex-direction: row;
+        gap: 8px;
+        font-size: 13px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 500;
+        min-width: 120px;
+        transition: all 0.15s ease;
+        color: var(--t2);
+        justify-content: center;
+      }
+
+      .nav-btn i {
+        font-size: 18px;
+      }
+
+      .nav-btn:hover {
+        background: var(--bg2);
+        color: var(--t1);
+      }
+
+      .nav-btn.active {
+        background: rgba(90, 171, 255, 0.15);
+        color: var(--acc-blue);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app dark" id="app">
+
+    <div id="view-auth-login" class="auth-page active">
+      <div class="auth-wrapper">
+        <div style="font-size:36px; margin-bottom:16px;">🤖</div>
+        <h2 style="margin-bottom: 8px; font-size: 20px;" id="lbl-login-title">เข้าสู่ระบบ</h2>
+        <p style="color: var(--t2); font-size: 13px; margin-bottom: 24px;" id="lbl-login-sub">
+          กรอกข้อมูลบัญชีเพื่อเข้าจัดการคอลเลกชัน</p>
+        <div class="form-container-card">
+          <div class="form-group">
+            <input type="email" id="login-email" placeholder="อีเมลแอนมิน: admin@test.com">
+          </div>
+          <div class="form-group">
+            <input type="password" id="login-pass" placeholder="รหัสผ่าน: 1234">
+          </div>
+          <div id="login-error-alert"
+            style="color: var(--acc-red); font-size: 13px; display: none; text-align: left; margin-bottom: 8px;">⚠️
+            อีเมลหรือรหัสผ่านไม่ถูกต้อง!</div>
+          <button class="btn-block" onclick="submitEmailLogin()" id="btn-login-action">เข้าสู่ระบบ</button>
+          <div style="color: var(--t3); font-size: 11px; margin: 8px 0;">— OR —</div>
+          <div style="display:flex; justify-content:center;">
+            <div id="google-signin-btn-container"></div>
+          </div>
+          <div style="margin-top: 20px; font-size: 13px; color: var(--t2);">
+            ยังไม่มีบัญชีใช่ไหม? <a href="#" onclick="toggleAuthView('register')"
+              style="color: var(--acc-blue); text-decoration: none; font-weight:600;"
+              id="lbl-link-reg">สมัครสมาชิกใหม่</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-auth-register" class="auth-page">
+      <div class="auth-wrapper">
+        <div style="font-size:36px; margin-bottom:16px;">✨</div>
+        <h2 style="margin-bottom: 8px; font-size: 20px;" id="lbl-reg-title">สมัครสมาชิกใหม่</h2>
+        <p style="color: var(--t2); font-size: 13px; margin-bottom: 24px;" id="lbl-reg-sub">
+          สร้างบัญชีผู้ใช้ใหม่เพื่อบันทึกคลังโมเดลของคุณ</p>
+        <div class="form-container-card">
+          <div class="form-group"><input type="text" id="reg-name" placeholder="ชื่อแสดงผล"></div>
+          <div class="form-group"><input type="email" id="reg-email" placeholder="อีเมล"></div>
+          <div class="form-group"><input type="password" id="reg-pass" placeholder="รหัสผ่าน"></div>
+          <button class="btn-block" onclick="submitEmailRegister()" style="background: var(--acc-green);"
+            id="btn-reg-action">ลงทะเบียนสมาชิก</button>
+          <div style="margin-top: 20px; font-size: 13px; color: var(--t2);">
+            มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleAuthView('login')"
+              style="color: var(--acc-blue); text-decoration: none; font-weight:600;"
+              id="lbl-link-login">กลับไปเข้าสู่ระบบ</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="main-application-view" style="display: none; flex-direction: column; min-height: 100vh;">
+
+      <div class="topbar">
+        <div class="topbar-content">
+          <div class="topbar-left-block">
+            <div class="topbar-title" id="topbar-title">ภาพรวม GUNPLA</div>
+            <div class="topbar-sub" id="topbar-sub">18 พ.ค. 2569</div>
+          </div>
+
+          <div class="bottom-nav" id="bottom-nav">
+            <button class="nav-btn active" id="nav-dash" onclick="goPage('dash')"><i class="ti ti-home"></i><span
+                id="nav-dash-lbl">หน้าหลัก</span></button>
+            <button class="nav-btn" id="nav-col" onclick="goPage('col')"><i class="ti ti-box"></i><span
+                id="nav-col-lbl">คอลเลกชัน</span></button>
+            <button class="nav-btn" id="nav-pre" onclick="goPage('pre')"><i class="ti ti-clock"></i><span
+                id="nav-pre-lbl">Pre-order</span></button>
+            <button class="nav-btn" id="nav-wish" onclick="goPage('wish')"><i class="ti ti-heart"></i><span
+                id="nav-wish-lbl">Wishlist</span></button>
+            <button class="nav-btn" id="nav-pro" onclick="goPage('pro')"><i class="ti ti-user"></i><span
+                id="nav-pro-lbl">โปรไฟล์</span></button>
+          </div>
+
+          <div class="topbar-right">
+            <div class="icon-btn" onclick="toggleLang()"><i class="ti ti-language"></i></div>
+            <div class="icon-btn" onclick="toggleTheme()"><i class="ti ti-moon" id="theme-icon"></i></div>
+
+            <div class="profile-trigger-btn" id="profile-dropdown-trigger" onclick="toggleDropdownMenu(event)">
+              <div class="profile-trigger-avatar-container">
+                <img id="trigger-avatar-img" class="profile-trigger-avatar-img" src="" alt="User Avatar">
+                <i class="ti ti-user" id="trigger-avatar-placeholder"
+                  style="font-size: 14px; color: var(--acc-blue);"></i>
+              </div>
+              <div class="profile-trigger-text" id="trigger-user-name">Pilot User</div>
+              <i class="ti ti-chevron-down" style="font-size:12px; color: var(--t3);"></i>
+            </div>
+
+            <div class="profile-dropdown-menu" id="profile-dropdown-container">
+              <div class="dropdown-user-info">
+                <div class="dropdown-avatar-big">
+                  <img id="dropdown-avatar-img" src="" alt="Avatar">
+                  <i class="ti ti-user" id="dropdown-avatar-placeholder"
+                    style="font-size: 20px; color: var(--acc-blue);"></i>
+                </div>
+                <div class="dropdown-info-text">
+                  <div class="dropdown-name" id="dropdown-display-name">Pilot User</div>
+                  <div class="dropdown-email" id="dropdown-display-email">pilot@gundam.com</div>
+                  <div class="dropdown-role-badge" id="dropdown-role-badge">USER ROLE</div>
+                </div>
+              </div>
+              <div class="dropdown-item-link" onclick="goPage('profile-settings')">
+                <span style="display:flex; align-items:center; gap:8px;"><i class="ti ti-user-cog"
+                    style="color:var(--acc-orange);"></i><span
+                    id="lbl-drop-profile-edit">จัดการข้อมูลโปรไฟล์</span></span>
+                <i class="ti ti-chevron-right" style="color: var(--t3);"></i>
+              </div>
+              <div class="dropdown-item-link" id="dropdown-admin-gate" style="display:none;"
+                onclick="goPage('admin-panel')">
+                <span style="display:flex; align-items:center; gap:8px; font-weight:600; color: var(--acc-purple);"><i
+                    class="ti ti-shield-cog"></i><span id="lbl-drop-admin">ระบบแอดมิน</span></span>
+                <i class="ti ti-chevron-right" style="color: var(--t3);"></i>
+              </div>
+              <div class="dropdown-item-link" onclick="goPage('manage-data')">
+                <span style="display:flex; align-items:center; gap:8px;"><i class="ti ti-database-plus"
+                    style="color:var(--acc-blue);"></i><span id="lbl-drop-manage">จัดการข้อมูลคลังหุ่น</span></span>
+                <i class="ti ti-chevron-right" style="color: var(--t3);"></i>
+              </div>
+              <div class="dropdown-item-link"
+                style="background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.1);"
+                onclick="handleLogout()">
+                <span style="display:flex; align-items:center; gap:8px; color: var(--acc-red); font-weight:600;"><i
+                    class="ti ti-logout"></i><span id="lbl-drop-logout">ออกจากระบบ</span></span>
+                <i class="ti ti-chevron-right" style="color: var(--acc-red);"></i>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="main-content-area" id="main-content-render-zone">
+
+          <div class="page active" id="page-dash">
+            <div class="cards-wrap">
+              <div class="summary-card">
+                <div class="card-accent" style="background:var(--acc-blue);"></div>
+                <div class="card-top">
+                  <div class="card-count-block">
+                    <div class="card-count" id="dash-own-count">2</div>
+                    <div class="card-count-sub" id="lbl-pieces">ชิ้น</div>
+                  </div>
+                  <div class="card-main-value">
+                    <div class="val" style="color:var(--acc-blue);" id="dash-own-val">฿5,090</div>
+                    <div class="lbl" id="lbl-totalval">มูลค่ารวม</div>
+                  </div>
+                </div>
+                <div class="card-title" id="lbl-collection">คอลเลกชัน</div>
+                <div class="divider"></div>
+                <div class="card-rows">
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-blue);"></span><span id="lbl-avgprice">ราคาเฉลี่ย</span></span><span
+                      class="rr" style="color:var(--acc-blue);" id="dash-own-avg">฿2,545</span></div>
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-green);"></span><span
+                        id="lbl-owned">ชิ้นที่มีแล้ว</span></span><span class="rr" style="color:var(--acc-green);"><span
+                        id="dash-own-sub-count">2</span> <span id="lbl-piece-s">ชิ้น</span></span></div>
+                </div>
+              </div>
+
+              <div class="summary-card">
+                <div class="card-accent" style="background:var(--acc-orange);"></div>
+                <div class="card-top">
+                  <div class="card-count-block">
+                    <div class="card-count" id="dash-pre-count">1</div>
+                    <div class="card-count-sub" id="lbl-items">รายการ</div>
+                  </div>
+                  <div class="card-main-value">
+                    <div class="val" style="color:var(--acc-orange);" id="dash-pre-val">฿8,500</div>
+                    <div class="lbl" id="lbl-total">ยอดรวม</div>
+                  </div>
+                </div>
+                <div class="card-title" id="lbl-preorder">Pre-order</div>
+                <div class="divider"></div>
+                <div class="card-rows">
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-green);"></span><span id="lbl-paid">จ่ายแล้ว</span></span><span
+                      class="rr" style="color:var(--acc-green);">฿2,500</span></div>
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-red);"></span><span id="lbl-due">คงค้าง</span></span><span
+                      class="rr" style="color:var(--acc-red);">฿6,000</span>
+                  </div>
+                </div>
+                <div class="prog-bar">
+                  <div class="prog-fill" style="width:29%;background:var(--acc-green);"></div>
+                </div>
+                <div class="prog-labels"><span id="lbl-prog-p">จ่ายแล้ว 29%</span><span id="lbl-prog-d">คงค้าง
+                    71%</span>
+                </div>
+              </div>
+
+              <div class="summary-card">
+                <div class="card-accent" style="background:var(--acc-red);"></div>
+                <div class="card-top">
+                  <div class="card-count-block">
+                    <div class="card-count">0</div>
+                    <div class="card-count-sub" id="lbl-items2">รายการ</div>
+                  </div>
+                  <div class="card-main-value">
+                    <div class="val" style="color:var(--acc-red);">฿0</div>
+                    <div class="lbl" id="lbl-estimate">ประมาณการ</div>
+                  </div>
+                </div>
+                <div class="card-title" id="lbl-wishlist">Wishlist</div>
+                <div class="divider"></div>
+                <div class="card-rows">
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-purple);"></span><span
+                        id="lbl-avgwish">ราคาเฉลี่ย/ชิ้น</span></span><span class="rr"
+                      style="color:var(--acc-purple);">฿0</span></div>
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-red);"></span><span
+                        id="lbl-budget">งบที่ต้องเตรียม</span></span><span class="rr"
+                      style="color:var(--acc-red);">฿0</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-hd">
+              <span id="lbl-recent">เพิ่มล่าสุด</span>
+            </div>
+            <div class="items-list-grid" id="recent-items-container"></div>
+          </div>
+
+          <div class="page" id="page-col">
+            <div class="col-page-header">
+              <div class="search-bar-wrap">
+                <input class="search-input" type="text" id="search-lbl" placeholder="ค้นหาฟิกเกอร์...">
+                <button class="filter-btn"><i class="ti ti-filter"></i></button>
+              </div>
+              <button class="add-data-btn" onclick="goPage('manage-data')"><i class="ti ti-plus"></i><span
+                  id="lbl-add-gundam-btn">เพิ่มข้อมูล</span></button>
+            </div>
+            <div class="items-list-grid" id="collection-items-container"></div>
+          </div>
+
+          <div class="page" id="page-pre">
+            <div class="cards-wrap">
+              <div class="summary-card" style="grid-column: 1 / -1;">
+                <div class="card-accent" style="background:var(--acc-orange);"></div>
+                <div style="font-size:13px;color:var(--t2);margin-bottom:6px;" id="lbl-pre-title">รายการ Pre-order
+                  ทั้งหมด
+                </div>
+                <div style="font-size:28px;font-weight:600;color:var(--t1);" id="pre-items-counter-summary">1 <span
+                    style="font-size:14px;color:var(--t3);" id="lbl-pre-items">รายการ</span></div>
+                <div class="divider"></div>
+                <div class="card-rows">
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-orange);"></span><span
+                        id="lbl-pre-total">ยอดรวมทั้งหมด</span></span><span class="rr"
+                      style="color:var(--acc-orange);">฿8,500</span></div>
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-green);"></span><span id="lbl-pre-paid">จ่ายแล้ว</span></span><span
+                      class="rr" style="color:var(--acc-green);">฿2,500</span></div>
+                  <div class="card-row"><span class="rl"><span class="dot"
+                        style="background:var(--acc-red);"></span><span id="lbl-pre-due">คงค้าง</span></span><span
+                      class="rr" style="color:var(--acc-red);">฿6,000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="items-list-grid" id="preorder-items-container"></div>
+          </div>
+
+          <div class="page" id="page-wish">
+            <div class="empty-state"><i class="ti ti-heart"></i><span id="lbl-no-wish">ยังไม่มีรายการ Wishlist</span>
+            </div>
+          </div>
+
+          <div class="page" id="page-profile-settings">
+            <div class="detail-header">
+              <span class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i> <span
+                  id="lbl-prof-back">กลับ</span></span>
+              <span class="detail-title" id="lbl-prof-title">จัดการโปรไฟล์นักบิน / Profile Management</span>
+            </div>
+            <div class="detail-card">
+              <div class="prof-banner-hud">
+                <div>
+                  <div style="font-size: 11px; color: var(--t3); text-transform: uppercase;" id="lbl-prof-rank-title">ยศ
+                    / Pilot Status</div>
+                  <div style="font-size: 18px; font-weight: 700; color: var(--acc-orange);" id="lbl-prof-rank">NEWTYPE
+                    SYSTEM ACTIVE</div>
+                </div>
+                <i class="ti ti-badges" style="font-size: 28px; color: var(--acc-orange);"></i>
+              </div>
+
+              <form id="profile-edit-form" onsubmit="event.preventDefault(); saveUserProfileChanges();">
+                <div class="form-group">
+                  <label id="lbl-prof-form-url">รูปโปรไฟล์ (URL รูปภาพ) / Avatar Photo URL</label>
+                  <input type="text" id="prof-input-img-url" placeholder="https://example.com/avatar.jpg">
+                </div>
+                <div class="form-group">
+                  <label id="lbl-prof-form-name">ชื่อแสดงผล / Display Pilot Name</label>
+                  <input type="text" id="prof-input-name" required placeholder="ชื่อเล่นหรือชื่อเรียก">
+                </div>
+                <div class="form-group">
+                  <label id="lbl-prof-form-email">อีเมลบัญชี / Registered Email</label>
+                  <input type="email" id="prof-input-email" required placeholder="name@domain.com">
+                </div>
+
+                <div class="prof-stat-mini-cards">
+                  <div class="prof-stat-box">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--acc-blue);" id="prof-stat-total-items">0
+                    </div>
+                    <div style="font-size: 10px; color: var(--t3);" id="lbl-prof-total-gundam">คลังหุ่นทั้งหมด</div>
+                  </div>
+                  <div class="prof-stat-box">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--acc-green);"
+                      id="prof-stat-total-invest">฿0</div>
+                    <div style="font-size: 10px; color: var(--t3);" id="lbl-prof-total-val">เงินลงทุนรวม</div>
+                  </div>
+                  <div class="prof-stat-box">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--acc-orange);" id="prof-stat-total-pre">0
+                    </div>
+                    <div style="font-size: 10px; color: var(--t3);" id="lbl-prof-total-pre">ค้างส่ง Pre-order</div>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-block" style="background: var(--acc-green); margin-top: 24px;">
+                  <i class="ti ti-player-record"></i> <span id="lbl-prof-btn-save">บันทึกการเปลี่ยนแปลงโปรไฟล์</span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="page" id="page-manage-data">
+            <div class="detail-header">
+              <span class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i> <span
+                  id="lbl-manage-back">กลับ</span></span>
+              <span class="detail-title" id="lbl-manage-title">เพิ่ม/แก้ไขข้อมูล Gunpla</span>
+            </div>
+            <div class="detail-card">
+              <form id="gunpla-entry-form" onsubmit="event.preventDefault(); saveGunplaData();">
+                <div class="form-group">
+                  <label id="lbl-form-name">ชื่อโมเดล / Model Name</label>
+                  <input type="text" id="form-name" required placeholder="เช่น HG Aerial Gundam">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="form-group">
+                    <label id="lbl-form-grade">เกรด / Grade</label>
+                    <select id="form-grade">
+                      <option>High Grade (HG)</option>
+                      <option>Real Grade (RG)</option>
+                      <option>Master Grade (MG)</option>
+                      <option>Perfect Grade (PG)</option>
+                      <option>SD Gundam</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label id="lbl-form-scale">สเกล / Scale</label>
+                    <input type="text" id="form-scale" placeholder="เช่น 1/144">
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="form-group">
+                    <label id="lbl-form-price">ราคา (บาท) / Price</label>
+                    <input type="number" id="form-price" required placeholder="เช่น 850">
+                  </div>
+                  <div class="form-group">
+                    <label id="lbl-form-status">สถานะ / Status</label>
+                    <select id="form-status">
+                      <option value="own">มีแล้ว (Owned)</option>
+                      <option value="pre">Pre-order</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label id="lbl-form-note">หมายเหตุ / Note</label>
+                  <textarea id="form-note" rows="3" placeholder="ระบุข้อมูลเพิ่มเติม..."></textarea>
+                </div>
+                <button type="submit" class="btn-block" style="background: var(--acc-green); margin-top: 10px;"><i
+                    class="ti ti-device-floppy"></i> <span id="lbl-form-save">บันทึกข้อมูลคลัง</span></button>
+              </form>
+            </div>
+          </div>
+
+          <div class="page" id="page-detail">
+            <div class="detail-header">
+              <span class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i> <span
+                  id="back-txt">กลับ</span></span>
+              <span class="detail-title" id="detail-page-title">รายละเอียด</span>
+            </div>
+            <div class="detail-layout-container">
+              <div class="detail-card">
+                <div class="detail-thumb-row">
+                  <div class="detail-thumb" id="d-thumb">🤖</div>
+                  <div>
+                    <div class="detail-name" id="d-name"></div>
+                    <div class="detail-series" id="d-series"></div>
+                    <div class="detail-grade" id="d-grade"></div>
+                  </div>
+                </div>
+                <div class="divider" style="margin:0 0 8px;"></div>
+                <div class="info-row"><span class="info-label"><i class="ti ti-tag"></i><span
+                      id="lbl-d-grade">เกรด</span></span><span class="info-val" id="d-gradeVer"></span></div>
+                <div class="info-row"><span class="info-label"><i class="ti ti-ruler"></i><span
+                      id="lbl-d-scale">สเกล</span></span><span class="info-val" id="d-scale"></span></div>
+                <div class="info-row"><span class="info-label"><i class="ti ti-currency-baht"></i><span
+                      id="lbl-d-price">ราคา</span></span><span class="info-val" style="color:var(--acc-blue);"
+                    id="d-price"></span></div>
+                <div class="info-row"><span class="info-label"><i class="ti ti-calendar"></i><span
+                      id="lbl-d-date">วันที่ซื้อ</span></span><span class="info-val" id="d-date"></span></div>
+                <div class="info-row"><span class="info-label"><i class="ti ti-check"></i><span
+                      id="lbl-d-status">สถานะ</span></span><span class="info-val" id="d-status"></span></div>
+              </div>
+              <div class="summary-card" style="height: fit-content;">
+                <div class="section-hd" style="padding:0 0 8px;font-size:13px;color:var(--t2);" id="lbl-d-note">หมายเหตุ
+                </div>
+                <div style="font-size:14px;color:var(--t2);line-height:1.6;" id="d-note"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="page" id="page-admin-panel">
+            <div class="detail-header">
+              <span class="back-btn" onclick="goPage('dash')"><i class="ti ti-arrow-left"></i> <span
+                  id="lbl-admin-back">กลับ</span></span>
+              <span class="detail-title" style="color: var(--acc-purple); font-weight:700;"><i class="ti ti-shield"></i>
+                <span id="lbl-admin-panel-title">ระบบจัดการผู้ดูแลสิทธิ์</span></span>
+            </div>
+            <div style="margin-top: 16px;">
+              <div class="user-manage-grid" id="admin-user-roles-list-wrapper"></div>
+            </div>
+          </div>
+
+          <div class="page" id="page-pro">
+            <div id="mobile-profile-container-holder"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // USER DATABASE STORAGE
+    let userDatabase = [
+      { email: 'admin@test.com', pass: '1234', name: 'แอดมินระบบหลัก', role: 'admin', picture: null },
+      { email: 'user@test.com', pass: '1234', name: 'ยูสเซอร์ทั่วไป', role: 'user', picture: null }
+    ];
+    let currentUser = null;
+
+    // RUNNING INVENTORY DATA
+    let items = [
+      { thumb: '🤖', name: 'RX-78-2 Gundam Ver.Ka', series: 'Mobile Suit Gundam', grade: 'Master Grade (MG)', scale: '1/100', price: 4200, date: { th: '18 พ.ค. 2569', en: '18 May 2026' }, status: { th: 'มีแล้ว', en: 'Owned' }, note: { th: 'ซื้อจาก Gundam Base Bangkok ชุดครบ', en: 'Purchased from Gundam Base Bangkok.' }, statusType: 'own' },
+      { thumb: '⚡', name: 'Unicorn Gundam Destroy Mode', series: 'Mobile Suit Gundam UC', grade: 'Perfect Grade (PG)', scale: '1/60', price: 8500, date: { th: 'รอกำหนดส่ง', en: 'ETA TBD' }, status: { th: 'รอของ', en: 'Pending' }, note: { th: 'วางมัดจำแล้ว 2,500 บาท รอของ', en: 'Deposit paid.' }, statusType: 'pre' }
+    ];
+
+    let isDark = true;
+    let isEng = false;
+    let prevPage = 'dash';
+
+    window.onload = function () {
+      applyLang();
+      refreshItemsCoreLogic();
+
+      window.addEventListener('click', function (e) {
+        const dropdown = document.getElementById('profile-dropdown-container');
+        const trigger = document.getElementById('profile-dropdown-trigger');
+        if (dropdown && trigger && !trigger.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.remove('show');
+        }
+      });
+
+      google.accounts.id.initialize({
+        client_id: "206566560175-cpmbb5593n06m17e2936aj75i7vghq7d.apps.googleusercontent.com",
+        callback: handleGoogleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("google-signin-btn-container"),
+        { theme: "filled_blue", size: "large", width: "290", shape: "pill" }
+      );
+    };
+
+    function toggleDropdownMenu(event) {
+      event.stopPropagation();
+      const dropdown = document.getElementById('profile-dropdown-container');
+      dropdown.classList.toggle('show');
+    }
+
+    function handleGoogleCredentialResponse(response) {
+      const payload = parseJwt(response.credential);
+      const email = payload.email;
+
+      let matchedUser = userDatabase.find(u => u.email === email);
+      if (!matchedUser) {
+        matchedUser = { email: email, pass: null, name: payload.name, role: 'user', picture: payload.picture };
+        userDatabase.push(matchedUser);
+      } else if (payload.picture) {
+        matchedUser.picture = payload.picture;
+      }
+      currentUser = matchedUser;
+      initMainApplication();
+    }
+
+    function parseJwt(token) {
+      var base64Url = token.split('.')[1];
+      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+    }
+
+    function submitEmailLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value.trim();
+      const found = userDatabase.find(u => u.email === email && u.pass === pass);
+      if (found) {
+        document.getElementById('login-error-alert').style.display = 'none';
+        currentUser = found;
+        initMainApplication();
+      } else {
+        document.getElementById('login-error-alert').style.display = 'block';
+      }
+    }
+
+    function submitEmailRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-pass').value.trim();
+      if (!name || !email || !pass) return alert('กรุณากรอกข้อมูลให้ครบ');
+      if (userDatabase.find(u => u.email === email)) return alert('อีเมลนี้ถูกใช้งานแล้ว');
+
+      currentUser = { email, pass, name, role: 'user', picture: null };
+      userDatabase.push(currentUser);
+      initMainApplication();
+    }
+
+    function initMainApplication() {
+      document.getElementById('view-auth-login').classList.remove('active');
+      document.getElementById('view-auth-register').classList.remove('active');
+      document.getElementById('main-application-view').style.display = 'flex';
+
+      updateTopbarAndDropdownProfileUI();
+
+      const adminGate = document.getElementById('dropdown-admin-gate');
+      adminGate.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+
+      document.getElementById('dropdown-role-badge').innerText = currentUser.role === 'admin' ? 'COMMANDER ADMIN' : 'PILOT USER';
+      document.getElementById('dropdown-role-badge').style.color = currentUser.role === 'admin' ? 'var(--acc-purple)' : 'var(--acc-blue)';
+
+      // ผูกค่าเข้ากล่องฟอร์มแก้ไขโปรไฟล์
+      document.getElementById('prof-input-name').value = currentUser.name;
+      document.getElementById('prof-input-email').value = currentUser.email;
+      document.getElementById('prof-input-img-url').value = currentUser.picture || '';
+
+      goPage('dash');
+      renderUserRoleManagement();
+      refreshItemsCoreLogic();
+    }
+
+    function updateTopbarAndDropdownProfileUI() {
+      if (!currentUser) return;
+      document.getElementById('trigger-user-name').innerText = currentUser.name;
+      document.getElementById('dropdown-display-name').innerText = currentUser.name;
+      document.getElementById('dropdown-display-email').innerText = currentUser.email;
+
+      const tAvatarImg = document.getElementById('trigger-avatar-img');
+      const tAvatarPlc = document.getElementById('trigger-avatar-placeholder');
+      const dAvatarImg = document.getElementById('dropdown-avatar-img');
+      const dAvatarPlc = document.getElementById('dropdown-avatar-placeholder');
+
+      if (currentUser.picture && currentUser.picture.trim() !== '') {
+        tAvatarImg.src = currentUser.picture; tAvatarImg.style.display = "block"; tAvatarPlc.style.display = "none";
+        dAvatarImg.src = currentUser.picture; dAvatarImg.style.display = "block"; dAvatarPlc.style.display = "none";
+      } else {
+        tAvatarImg.style.display = "none"; tAvatarPlc.style.display = "flex";
+        dAvatarImg.style.display = "none"; dAvatarPlc.style.display = "flex";
+      }
+    }
+
+    // เซฟการเปลี่ยนแปลงข้อมูลโปรไฟล์
+    function saveUserProfileChanges() {
+      if (!currentUser) return;
+      const newName = document.getElementById('prof-input-name').value.trim();
+      const newEmail = document.getElementById('prof-input-email').value.trim();
+      const newUrl = document.getElementById('prof-input-img-url').value.trim();
+
+      if (!newName || !newEmail) {
+        alert('กรุณากรอกชื่อและอีเมลให้เรียบร้อย');
+        return;
+      }
+
+      currentUser.name = newName;
+      currentUser.email = newEmail;
+      currentUser.picture = newUrl !== '' ? newUrl : null;
+
+      updateTopbarAndDropdownProfileUI();
+      alert(isEng ? 'Profile changes saved successfully!' : 'บันทึกการแก้ไขโปรไฟล์สำเร็จแล้ว!');
+      goPage('dash');
+    }
+
+    function renderUserRoleManagement() {
+      document.getElementById('admin-user-roles-list-wrapper').innerHTML = userDatabase.map(user => `
+        <div class="user-manage-item">
+          <div>
+            <div style="font-size: 14px; font-weight:600; color:var(--t1);">${user.name}</div>
+            <div style="font-size: 12px; color: var(--t2); margin-top: 2px;">${user.email}</div>
+          </div>
+          <button class="role-toggle-btn ${user.role === 'admin' ? 'is-admin' : 'is-user'}" onclick="toggleUserRoleInDatabase('${user.email}')">
+            <i class="ti ${user.role === 'admin' ? 'ti-shield' : 'ti-user'}"></i> ${user.role.toUpperCase()}
+          </button>
+        </div>`).join('');
+    }
+
+    function toggleUserRoleInDatabase(email) {
+      if (currentUser.email === email) return alert('คุณไม่สามารถลดสิทธิ์ตัวเองได้ครับ!');
+      const targetUser = userDatabase.find(u => u.email === email);
+      if (targetUser) {
+        targetUser.role = targetUser.role === 'admin' ? 'user' : 'admin';
+        renderUserRoleManagement();
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      document.getElementById('profile-dropdown-container').classList.remove('show');
+      document.getElementById('main-application-view').style.display = 'none';
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-pass').value = '';
+      toggleAuthView('login');
+    }
+
+    function toggleAuthView(viewName) {
+      document.querySelectorAll('.auth-page').forEach(el => el.classList.remove('active'));
+      document.getElementById(`view-auth-${viewName}`).classList.add('active');
+    }
+
+    function goPage(pageId) {
+      document.getElementById('profile-dropdown-container').classList.remove('show');
+      document.querySelectorAll('#main-content-render-zone .page').forEach(p => p.classList.remove('active'));
+
+      const activeNav = document.getElementById(`nav-${pageId}`);
+      document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+      if (activeNav) activeNav.classList.add('active');
+
+      if (pageId === 'pro' || pageId === 'profile-settings') {
+        // หากกดเข้าหน้าแก้ไขโปรไฟล์ ดึงสถิติจริงมาใส่ตารางการ์ดย่อยทันที
+        let ownCount = 0, ownSum = 0, preCount = 0;
+        items.forEach(item => {
+          const p = item.rawPrice || parseInt(String(item.price).replace(/[^0-digit]/g, '')) || 0;
+          if (item.statusType === 'own') { ownCount++; ownSum += p; } else { preCount++; }
+        });
+
+        document.getElementById('prof-stat-total-items').innerText = items.length;
+        document.getElementById('prof-stat-total-invest').innerText = `฿${ownSum.toLocaleString()}`;
+        document.getElementById('prof-stat-total-pre').innerText = preCount;
+
+        if (pageId === 'pro') {
+          const dContent = document.getElementById('profile-dropdown-container').innerHTML;
+          document.getElementById('mobile-profile-container-holder').innerHTML = `<div style="background:var(--bg1); padding:20px; border-radius:14px; border:1px solid var(--bdr); display:flex; flex-direction:column; gap:16px;">${dContent}</div>`;
+          document.getElementById('page-pro').classList.add('active');
+          const mAdminGate = document.querySelector('#mobile-profile-container-holder #dropdown-admin-gate');
+          if (mAdminGate && currentUser) mAdminGate.style.display = currentUser.role === 'admin' ? 'flex' : 'none';
+        } else {
+          document.getElementById('page-profile-settings').classList.add('active');
+        }
+      } else {
+        const targetPage = document.getElementById(`page-${pageId}`);
+        if (targetPage) targetPage.classList.add('active');
+      }
+
+      window.scrollTo(0, 0);
+      if (pageId !== 'detail' && pageId !== 'manage-data' && pageId !== 'admin-panel' && pageId !== 'profile-settings') prevPage = pageId;
+    }
+
+    function saveGunplaData() {
+      const name = document.getElementById('form-name').value;
+      const grade = document.getElementById('form-grade').value;
+      const scale = document.getElementById('form-scale').value || '1/100';
+      const price = parseFloat(document.getElementById('form-price').value) || 0;
+      const statusType = document.getElementById('form-status').value;
+      const noteTxt = document.getElementById('form-note').value;
+
+      const newItem = {
+        thumb: '🤖',
+        name: name,
+        series: 'Custom Pipeline',
+        grade: grade,
+        scale: scale,
+        price: statusType === 'own' ? `฿${price.toLocaleString()}` : 'Pre-order',
+        date: { th: '18 พ.ค. 2569', en: '18 May 2026' },
+        status: statusType === 'own' ? { th: 'มีแล้ว', en: 'Owned' } : { th: 'รอของ', en: 'Pending' },
+        note: { th: noteTxt, en: noteTxt },
+        statusType: statusType,
+        rawPrice: price
+      };
+
+      items.push(newItem);
+      document.getElementById('gunpla-entry-form').reset();
+      refreshItemsCoreLogic();
+      goPage('col');
+    }
+
+    function refreshItemsCoreLogic() {
+      let ownCount = 0, ownSum = 0;
+      let preCount = 0, preSum = 0;
+
+      items.forEach(item => {
+        const p = item.rawPrice || parseInt(String(item.price).replace(/[^0-digit]/g, '')) || 0;
+        if (item.statusType === 'own') {
+          ownCount++; ownSum += p;
+        } else {
+          preCount++; preSum += p;
+        }
+      });
+
+      document.getElementById('dash-own-count').innerText = ownCount;
+      document.getElementById('dash-own-sub-count').innerText = ownCount;
+      document.getElementById('dash-own-val').innerText = `฿${ownSum.toLocaleString()}`;
+      document.getElementById('dash-own-avg').innerText = `฿${(ownCount ? Math.round(ownSum / ownCount) : 0).toLocaleString()}`;
+
+      document.getElementById('dash-pre-count').innerText = preCount;
+      document.getElementById('pre-items-counter-summary').innerHTML = `${preCount} <span style="font-size:14px;color:var(--t3);" id="lbl-pre-items">${isEng ? 'items' : 'รายการ'}</span>`;
+      document.getElementById('dash-pre-val').innerText = `฿${preSum.toLocaleString()}`;
+
+      const container = document.getElementById('recent-items-container');
+      const colContainer = document.getElementById('collection-items-container');
+      const preContainer = document.getElementById('preorder-items-container');
+
+      let recentHtml = '', colHtml = '', preHtml = '';
+
+      items.forEach((item, idx) => {
+        const badgeClass = item.statusType === 'own' ? 'badge-own' : 'badge-pre';
+        const displayPrice = typeof item.price === 'number' ? `฿${item.price.toLocaleString()}` : item.price;
+        const itemHtml = `
+          <div class="recent-item" onclick="showDetail(${idx})">
+            <div class="r-thumb">${item.thumb}</div>
+            <div class="r-info">
+              <div class="r-name">${item.name}</div>
+              <div class="r-meta">${item.grade} · ${displayPrice}</div>
+            </div>
+            <span class="r-badge ${badgeClass}">${isEng ? item.status.en : item.status.th}</span>
+            <i class="ti ti-chevron-right" style="color: var(--t3); margin-left:8px;"></i>
+          </div>`;
+
+        recentHtml += itemHtml;
+        if (item.statusType === 'own') colHtml += itemHtml;
+        if (item.statusType === 'pre') preHtml += itemHtml;
+      });
+
+      if (container) container.innerHTML = recentHtml;
+      if (colContainer) colContainer.innerHTML = colHtml || `<div class="empty-state"><i class="ti ti-box"></i>ไม่มีรายการในคอลเลกชัน</div>`;
+      if (preContainer) preContainer.innerHTML = preHtml || `<div class="empty-state"><i class="ti ti-clock"></i>ไม่มีรายการ Pre-order</div>`;
+    }
+
+    function showDetail(idx) {
+      const item = items[idx];
+      const lang = isEng ? 'en' : 'th';
+      document.getElementById('d-thumb').textContent = item.thumb;
+      document.getElementById('d-name').textContent = item.name;
+      document.getElementById('d-series').textContent = item.series;
+      document.getElementById('d-gradeVer').textContent = item.grade + ' · ' + item.scale;
+      document.getElementById('d-price').textContent = typeof item.price === 'number' ? `฿${item.price.toLocaleString()}` : item.price;
+      document.getElementById('d-date').textContent = item.date[lang];
+
+      const statusEl = document.getElementById('d-status');
+      statusEl.textContent = item.status[lang];
+      statusEl.className = 'info-val r-badge ' + (item.statusType === 'own' ? 'badge-own' : 'badge-pre');
+
+      document.getElementById('d-note').textContent = item.note[lang];
+      document.getElementById('page-detail').dataset.idx = idx;
+
+      document.querySelectorAll('#main-content-render-zone .page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-detail').classList.add('active');
+    }
+
+    function goBack() { goPage(prevPage); }
+
+    const T = {
+      th: {
+        topbar: 'ภาพรวม GUNPLA', pieces: 'ชิ้น', items: 'รายการ', totalval: 'มูลค่ารวม', collection: 'คอลเลกชัน', avgprice: 'ราคาเฉลี่ย', owned: 'ชิ้นที่มีแล้ว', pieces2: 'ชิ้น', total: 'ยอดรวม', paid: 'จ่ายแล้ว', due: 'คงค้าง', estimate: 'ประมาณการ', wishlist: 'Wishlist', avgwish: 'ราคาเฉลี่ย/ชิ้น', budget: 'งบที่ต้องเตรียม', recent: 'เพิ่มล่าสุด', back: 'กลับ', detail: 'รายละเอียด', grade: 'เกรด', scale: 'สเกล', price: 'ราคา', date: 'วันที่ซื้อ', status: 'สถานะ', note: 'หมายเหตุ', search: 'ค้นหาฟิกเกอร์...', pre_title: 'รายการ Pre-order ทั้งหมด', pre_items: 'รายการ', pre_total: 'ยอดรวมทั้งหมด', pre_paid: 'จ่ายแล้ว', pre_due: 'คงค้าง', no_pre: 'ยังไม่มีรายการ Pre-order', wish_title: 'รายการ Wishlist ทั้งหมด', wish_items: 'รายการ', wish_est: 'ราคาประมาณการรวม', no_wish: 'ยังไม่มีรายการ Wishlist', nav_home: 'หน้าหลัก', nav_col: 'คอลเลกชัน', nav_wish: 'Wishlist', nav_pro: 'โปรไฟล์', login_t: 'เข้าสู่ระบบ', login_s: 'กรอกข้อมูลบัญชีเพื่อเข้าจัดการคอลเลกชัน', reg_t: 'สมัครสมาชิกใหม่', reg_s: 'สร้างบัญชีผู้ใช้ใหม่เพื่อบันทึกคลังโมเดลของคุณ', admin_panel: 'ระบบแอดมิน', user_manage: 'ระบบจัดการผู้ดูแลสิทธิ์', add_btn: 'เพิ่มข้อมูล', menu_add: 'จัดการข้อมูลคลังหุ่น', drop_logout: 'ออกจากระบบ', drop_prof: 'จัดการข้อมูลโปรไฟล์', prof_title: 'จัดการโปรไฟล์นักบิน', prof_url: 'รูปโปรไฟล์ (URL รูปภาพ)', prof_name: 'ชื่อแสดงผล', prof_email: 'อีเมลบัญชี', prof_tot: 'คลังหุ่นทั้งหมด', prof_val: 'เงินลงทุนรวม', prof_p_c: 'ค้างส่ง Pre-order', prof_btn: 'บันทึกการเปลี่ยนแปลงโปรไฟล์'
+      },
+      en: {
+        topbar: 'GUNPLA Overview', pieces: 'pcs', items: 'items', totalval: 'Total Value', collection: 'Collection', avgprice: 'Avg. Price', owned: 'Owned', pieces2: 'pcs', total: 'Total', paid: 'Paid', due: 'Outstanding', estimate: 'Estimated', wishlist: 'Wishlist', avgwish: 'Avg. per item', budget: 'Budget needed', recent: 'Recently Added', back: 'Back', detail: 'Details', grade: 'Grade', scale: 'Scale', price: 'Price', date: 'Purchase Date', status: 'Status', note: 'Notes', search: 'Search figures...', pre_title: 'All Pre-orders', pre_items: 'items', pre_total: 'Total Amount', pre_paid: 'Paid', pre_due: 'Outstanding', no_pre: 'No pre-orders yet', wish_title: 'All Wishlists', wish_items: 'items', wish_est: 'Estimated Total', no_wish: 'No wishlist items yet', nav_home: 'Home', nav_col: 'Collection', nav_wish: 'Wishlist', nav_pro: 'Profile', login_t: 'Sign In', login_s: 'Sign in to access your dashboard collection.', reg_t: 'Create Account', reg_s: 'Register to manage and pipeline your models.', admin_panel: 'Admin Panel', user_manage: 'User Authority Control', add_btn: 'Add Gunpla', menu_add: 'Manage Inventory Data', drop_logout: 'Sign Out', drop_prof: 'Manage Profile Settings', prof_title: 'Pilot Profile Management', prof_url: 'Avatar Photo URL', prof_name: 'Display Pilot Name', prof_email: 'Registered Email', prof_tot: 'Total Gunpla', prof_val: 'Total Invested', prof_p_c: 'Pending Pre-order', prof_btn: 'Save Profile Changes'
+      }
+    };
+
+    function t(k) { return (isEng ? T.en : T.th)[k] || k; }
+
+    function applyLang() {
+      const ids = {
+        'topbar-title': 'topbar', 'lbl-pieces': 'pieces', 'lbl-items': 'items', 'lbl-items2': 'items',
+        'lbl-totalval': 'totalval', 'lbl-collection': 'collection', 'lbl-avgprice': 'avgprice',
+        'lbl-owned': 'owned', 'lbl-piece-s': 'pieces2', 'lbl-total': 'total', 'lbl-paid': 'paid',
+        'lbl-due': 'due', 'lbl-estimate': 'estimate', 'lbl-wishlist': 'wishlist', 'lbl-avgwish': 'avgwish',
+        'lbl-budget': 'budget', 'lbl-recent': 'recent', 'back-txt': 'back', 'detail-page-title': 'detail',
+        'lbl-d-grade': 'grade', 'lbl-d-scale': 'scale', 'lbl-d-price': 'price', 'lbl-d-date': 'date',
+        'lbl-d-status': 'status', 'lbl-d-note': 'note', 'lbl-pre-title': 'pre_title', 'lbl-pre-items': 'pre_items',
+        'lbl-no-wish': 'no_wish', 'nav-dash-lbl': 'nav_home', 'nav-col-lbl': 'nav_col', 'nav-wish-lbl': 'nav_wish',
+        'nav-pro-lbl': 'nav_pro', 'lbl-login-title': 'login_t', 'lbl-login-sub': 'login_s', 'lbl-reg-title': 'reg_t',
+        'lbl-reg-sub': 'reg_s', 'lbl-admin-back': 'back', 'lbl-admin-panel-title': 'user_manage', 'lbl-add-gundam-btn': 'add_btn',
+        'lbl-manage-back': 'back', 'lbl-manage-title': 'menu_add', 'lbl-drop-admin': 'admin_panel', 'lbl-drop-manage': 'menu_add', 'lbl-drop-logout': 'drop_logout',
+        'lbl-drop-profile-edit': 'drop_prof', 'lbl-prof-back': 'back', 'lbl-prof-title': 'prof_title', 'lbl-prof-form-url': 'prof_url',
+        'lbl-prof-form-name': 'prof_name', 'lbl-prof-form-email': 'prof_email', 'lbl-prof-total-gundam': 'prof_tot', 'lbl-prof-total-val': 'prof_val',
+        'lbl-prof-total-pre': 'prof_p_c', 'lbl-prof-btn-save': 'prof_btn'
+      };
+      Object.entries(ids).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.textContent = t(key); });
+      const si = document.getElementById('search-lbl'); if (si) si.placeholder = t('search');
+
+      if (currentUser) {
+        document.getElementById('dropdown-role-badge').innerText = currentUser.role === 'admin' ? (isEng ? 'COMMANDER ADMIN' : 'แอดมินระบบหลัก') : (isEng ? 'PILOT USER' : 'ยูสเซอร์ทั่วไป');
+      }
+    }
+
+    function toggleTheme() {
+      isDark = !isDark;
+      const app = document.getElementById('app');
+      app.classList.toggle('dark', isDark); app.classList.toggle('light', !isDark);
+      document.getElementById('theme-icon').className = isDark ? 'ti ti-moon' : 'ti ti-sun';
+    }
+
+    function toggleLang() {
+      isEng = !isEng;
+      applyLang();
+      refreshItemsCoreLogic();
+      const activePage = document.querySelector('.page.active');
+      if (activePage && activePage.id === 'page-detail') {
+        showDetail(parseInt(activePage.dataset.idx || 0));
+      }
+    }
+  </script>
+</body>
+
+</html>
